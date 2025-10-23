@@ -1,22 +1,34 @@
-## Getting Started
+# 🏨 Hotel Booking System
 
-Welcome to the VS Code Java world. Here is a guideline to help you get started to write Java code in Visual Studio Code.
+A simple console-based Java application for managing hotel rooms and bookings.  
+Built with **Java** and **SQLite**.
 
-## Folder Structure
+---
 
-The workspace contains two folders by default, where:
+## 🚀 Features
+- Add and remove rooms  
+- View all and available rooms  
+- Book and release rooms  
+- Persistent data using SQLite database  
 
-- `src`: the folder to maintain sources
-- `lib`: the folder to maintain dependencies
+---
 
-Meanwhile, the compiled output files will be generated in the `bin` folder by default.
+## 🛠️ Technologies
+- Java 17  
+- SQLite  
+- JDBC  
 
-> If you want to customize the folder structure, open `.vscode/settings.json` and update the related settings there.
+---
 
-## Dependency Management
+## 💻 How to Run
 
-The `JAVA PROJECTS` view allows you to manage your dependencies. More details can be found [here](https://github.com/microsoft/vscode-java-dependency#manage-dependencies).
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/yaraslau-tumilovich/HotelBooking.git
+2. Compile:
+    javac -d out -cp "src:lib/sqlite-jdbc-3.50.3.0.jar" $(find src -name "*.java")
+3. Run:
+    java -cp "out:lib/sqlite-jdbc-3.50.3.0.jar" Main
 
 
-javac -cp "lib/sqlite-jdbc-3.50.3.0.jar" src/model/*.java src/service/*.java src/ui/*.java src/Main.java -d out
-# HotelBooking
+
