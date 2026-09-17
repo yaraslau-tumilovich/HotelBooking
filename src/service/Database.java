@@ -14,19 +14,50 @@ public class Database {
     }
 
     public static void initialize() {
-        String sql = "CREATE TABLE IF NOT EXISTS rooms (" +
-                     "number INTEGER PRIMARY KEY," +
-                     "type TEXT NOT NULL," +
-                     "price REAL NOT NULL," +
-                     "booked BOOLEAN NOT NULL," +
-                     "balcony BOOLEAN" +  
-                     ");";
 
-        try (Connection conn = connect(); Statement stmt = conn.createStatement()) {
-            stmt.execute(sql);
+        String roomsSql = "CREATE TABLE IF NOT EXISTS rooms (" +
+                "number INTEGER PRIMARY KEY," +
+                "type TEXT NOT NULL," +
+                "price REAL NOT NULL," +
+                "booked BOOLEAN NOT NULL," +
+                "balcony BOOLEAN" +
+                ");";
+
+        String usersSql = "CREATE TABLE IF NOT EXISTS users (" +
+                "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                "username TEXT NOT NULL UNIQUE," +
+                "password TEXT NOT NULL," +
+                "role TEXT NOT NULL" +
+                ");";
+
+        try (Connection conn = connect();
+            Statement stmt = conn.createStatement()) {
+
+            stmt.execute(roomsSql);
+            stmt.execute(usersSql);
+
+            String bookingsSql = "CREATE TABLE IF NOT EXISTS bookings (" +
+                    "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                    "user_id INTEGER NOT NULL," +
+                    "room_number INTEGER NOT NULL UNIQUE," +
+                    "FOREIGN KEY (user_id) REFERENCES users(id)," +
+                    "FOREIGN KEY (room_number) REFERENCES rooms(number)" +
+                    ");";
+
+        stmt.execute(bookingsSql);
+
+            String adminSql = "INSERT OR IGNORE INTO users " +
+                    "(username, password, role) " +
+                    "VALUES ('admin', 'admin123', 'ADMIN')";
+
+            stmt.execute(adminSql);
+
             System.out.println("Database initialized successfully!");
-        } catch (SQLException e) {
-            System.out.println("Error initializing database: " + e.getMessage());
+
+} catch (SQLException e) {
+            System.out.println(
+                    "Error initializing database: " + e.getMessage()
+            );
         }
     }
 }
