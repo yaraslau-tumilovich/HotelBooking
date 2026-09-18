@@ -1,11 +1,4 @@
-# Compiled Java files
 bin/
-
-# SQLite database
 hotel.db
-
-# VS Code
 .vscode/
-
-# macOS
 .DS_Store

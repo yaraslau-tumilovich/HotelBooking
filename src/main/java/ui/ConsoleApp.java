@@ -2,6 +2,7 @@ package ui;
 
 import java.util.InputMismatchException;
 import java.util.Scanner;
+
 import model.DeluxeRoom;
 import model.Role;
 import model.StandardRoom;
