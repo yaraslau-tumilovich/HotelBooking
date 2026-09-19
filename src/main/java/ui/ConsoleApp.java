@@ -1,5 +1,7 @@
 package ui;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.InputMismatchException;
 import java.util.Scanner;
 
@@ -179,7 +181,7 @@ public class ConsoleApp {
         System.out.println("2. Show all rooms");
         System.out.println("3. Show available rooms");
         System.out.println("4. Book room");
-        System.out.println("5. Release room");
+        System.out.println("5. Cancel booking");
         System.out.println("6. Remove room");
         System.out.println("7. Change room price");
         System.out.println("8. User management");
@@ -247,7 +249,17 @@ public class ConsoleApp {
 
             case 3:
 
-                hotelService.showAvailableRooms();
+                LocalDate checkIn = readDate(
+                        scanner,
+                        "Enter check-in date (YYYY-MM-DD): ");
+
+                LocalDate checkOut = readCheckOutDate(
+                        scanner,
+                        checkIn);
+
+                hotelService.showAvailableRooms(
+                        checkIn,
+                        checkOut);
 
                 break;
 
@@ -257,20 +269,30 @@ public class ConsoleApp {
                         scanner,
                         "Enter room number to book: ");
 
+                LocalDate bookingCheckIn = readDate(
+                        scanner,
+                        "Enter check-in date (YYYY-MM-DD): ");
+
+                LocalDate bookingCheckOut = readCheckOutDate(
+                        scanner,
+                        bookingCheckIn);
+
                 hotelService.bookRoom(
                         bookNumber,
-                        user);
+                        user,
+                        bookingCheckIn,
+                        bookingCheckOut);
 
                 break;
 
             case 5:
 
-                int releaseNumber = readInt(
+                int bookingId = readInt(
                         scanner,
-                        "Enter room number to release: ");
+                        "Enter Booking ID to cancel: ");
 
-                hotelService.releaseRoom(
-                        releaseNumber,
+                hotelService.cancelBooking(
+                        bookingId,
                         user);
 
                 break;
@@ -408,7 +430,7 @@ public class ConsoleApp {
         System.out.println("1. Show all rooms");
         System.out.println("2. Show available rooms");
         System.out.println("3. Book room");
-        System.out.println("4. Release my room");
+        System.out.println("4. Cancel my booking");
         System.out.println("5. My bookings");
         System.out.println("6. Delete my account");
         System.out.println("0. Logout");
@@ -427,7 +449,17 @@ public class ConsoleApp {
 
             case 2:
 
-                hotelService.showAvailableRooms();
+                LocalDate checkIn = readDate(
+                        scanner,
+                        "Enter check-in date (YYYY-MM-DD): ");
+
+                LocalDate checkOut = readCheckOutDate(
+                        scanner,
+                        checkIn);
+
+                hotelService.showAvailableRooms(
+                        checkIn,
+                        checkOut);
 
                 break;
 
@@ -437,20 +469,30 @@ public class ConsoleApp {
                         scanner,
                         "Enter room number to book: ");
 
+                LocalDate bookingCheckIn = readDate(
+                        scanner,
+                        "Enter check-in date (YYYY-MM-DD): ");
+
+                LocalDate bookingCheckOut = readCheckOutDate(
+                        scanner,
+                        bookingCheckIn);
+
                 hotelService.bookRoom(
                         bookNumber,
-                        user);
+                        user,
+                        bookingCheckIn,
+                        bookingCheckOut);
 
                 break;
 
             case 4:
 
-                int releaseNumber = readInt(
+                int bookingId = readInt(
                         scanner,
-                        "Enter room number to release: ");
+                        "Enter Booking ID to cancel: ");
 
-                hotelService.releaseRoom(
-                        releaseNumber,
+                hotelService.cancelBooking(
+                        bookingId,
                         user);
 
                 break;
@@ -527,6 +569,44 @@ public class ConsoleApp {
 
                 scanner.nextLine();
             }
+        }
+    }
+
+    private static LocalDate readDate(Scanner scanner, String message) {
+
+        while (true) {
+
+            System.out.print(message);
+
+            String input = scanner.nextLine();
+
+            try {
+                return LocalDate.parse(input);
+
+            } catch (DateTimeParseException e) {
+
+                System.out.println(
+                        "Invalid date. Use format YYYY-MM-DD.");
+            }
+        }
+    }
+
+    private static LocalDate readCheckOutDate(
+            Scanner scanner,
+            LocalDate checkIn) {
+
+        while (true) {
+
+            LocalDate checkOut = readDate(
+                    scanner,
+                    "Enter check-out date (YYYY-MM-DD): ");
+
+            if (checkOut.isAfter(checkIn)) {
+                return checkOut;
+            }
+
+            System.out.println(
+                    "Check-out date must be after check-in date.");
         }
     }
 

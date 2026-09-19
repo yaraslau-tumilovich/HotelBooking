@@ -31,7 +31,7 @@ public class Database {
                 ");";
 
         try (Connection conn = connect();
-            Statement stmt = conn.createStatement()) {
+                Statement stmt = conn.createStatement()) {
 
             stmt.execute(roomsSql);
             stmt.execute(usersSql);
@@ -39,12 +39,14 @@ public class Database {
             String bookingsSql = "CREATE TABLE IF NOT EXISTS bookings (" +
                     "id INTEGER PRIMARY KEY AUTOINCREMENT," +
                     "user_id INTEGER NOT NULL," +
-                    "room_number INTEGER NOT NULL UNIQUE," +
+                    "room_number INTEGER NOT NULL," +
+                    "check_in TEXT NOT NULL," +
+                    "check_out TEXT NOT NULL," +
                     "FOREIGN KEY (user_id) REFERENCES users(id)," +
                     "FOREIGN KEY (room_number) REFERENCES rooms(number)" +
                     ");";
 
-        stmt.execute(bookingsSql);
+            stmt.execute(bookingsSql);
 
             String adminSql = "INSERT OR IGNORE INTO users " +
                     "(username, password, role) " +
@@ -54,10 +56,9 @@ public class Database {
 
             System.out.println("Database initialized successfully!");
 
-} catch (SQLException e) {
+        } catch (SQLException e) {
             System.out.println(
-                    "Error initializing database: " + e.getMessage()
-            );
+                    "Error initializing database: " + e.getMessage());
         }
     }
 }

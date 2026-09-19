@@ -160,7 +160,8 @@ public class UserService {
 
     public void showUserBookings(String username) {
 
-        String sql = "SELECT r.number, r.type, r.price, r.balcony " +
+        String sql = "SELECT b.id, b.check_in, b.check_out, " +
+                "r.number, r.type, r.price, r.balcony " +
                 "FROM users u " +
                 "JOIN bookings b ON u.id = b.user_id " +
                 "JOIN rooms r ON b.room_number = r.number " +
@@ -181,6 +182,15 @@ public class UserService {
             while (rs.next()) {
 
                 found = true;
+
+                System.out.println(
+                        "Booking ID: " + rs.getInt("id"));
+
+                System.out.println(
+                        "Check-in: " + rs.getString("check_in"));
+
+                System.out.println(
+                        "Check-out: " + rs.getString("check_out"));
 
                 System.out.println(
                         "Room: " + rs.getInt("number"));

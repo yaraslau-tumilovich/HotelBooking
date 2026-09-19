@@ -19,10 +19,6 @@ public class Room {
         return pricePerNight;
     }
 
-    public boolean isAvailable() {
-        return isAvailable;
-    }
-
     public void setAvailable(boolean available) {
         isAvailable = available;
     }

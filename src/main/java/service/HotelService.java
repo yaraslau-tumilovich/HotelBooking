@@ -5,6 +5,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,10 +23,10 @@ public class HotelService {
     public void addRoom(Room room) {
 
         String sql = "INSERT INTO rooms(number,type,price,booked,balcony) " +
-                     "VALUES(?,?,?,?,?)";
+                "VALUES(?,?,?,?,?)";
 
         try (Connection conn = Database.connect();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setInt(1, room.getRoomNumber());
 
@@ -33,8 +34,7 @@ public class HotelService {
                     2,
                     room instanceof DeluxeRoom
                             ? "Deluxe"
-                            : "Standard"
-            );
+                            : "Standard");
 
             pstmt.setDouble(3, room.getPricePerNight());
 
@@ -43,21 +43,18 @@ public class HotelService {
             pstmt.setBoolean(
                     5,
                     room instanceof DeluxeRoom
-                            && ((DeluxeRoom) room).hasBalcony()
-            );
+                            && ((DeluxeRoom) room).hasBalcony());
 
             pstmt.executeUpdate();
 
             System.out.println(
                     "Room " + room.getRoomNumber() +
-                    " added successfully!"
-            );
+                            " added successfully!");
 
         } catch (SQLException e) {
 
             System.out.println(
-                    "Error adding room: " + e.getMessage()
-            );
+                    "Error adding room: " + e.getMessage());
         }
     }
 
@@ -71,7 +68,7 @@ public class HotelService {
         String sql = "UPDATE rooms SET price = ? WHERE number = ?";
 
         try (Connection conn = Database.connect();
-            PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setDouble(1, newPrice);
             pstmt.setInt(2, roomNumber);
@@ -82,9 +79,8 @@ public class HotelService {
 
                 System.out.println(
                         "Price of room " + roomNumber +
-                        " changed to $" + newPrice +
-                        " per night."
-                );
+                                " changed to $" + newPrice +
+                                " per night.");
 
             } else {
 
@@ -95,8 +91,7 @@ public class HotelService {
 
             System.out.println(
                     "Error changing room price: " +
-                    e.getMessage()
-            );
+                            e.getMessage());
         }
     }
 
@@ -105,7 +100,7 @@ public class HotelService {
         String sql = "DELETE FROM rooms WHERE number = ?";
 
         try (Connection conn = Database.connect();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setInt(1, roomNumber);
 
@@ -115,8 +110,7 @@ public class HotelService {
 
                 System.out.println(
                         "Room " + roomNumber +
-                        " removed successfully!"
-                );
+                                " removed successfully!");
 
             } else {
 
@@ -126,8 +120,7 @@ public class HotelService {
         } catch (SQLException e) {
 
             System.out.println(
-                    "Error removing room: " + e.getMessage()
-            );
+                    "Error removing room: " + e.getMessage());
         }
     }
 
@@ -138,8 +131,8 @@ public class HotelService {
         String sql = "SELECT * FROM rooms";
 
         try (Connection conn = Database.connect();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
+                Statement stmt = conn.createStatement();
+                ResultSet rs = stmt.executeQuery(sql)) {
 
             while (rs.next()) {
 
@@ -155,16 +148,14 @@ public class HotelService {
 
                     room = new StandardRoom(
                             number,
-                            price
-                    );
+                            price);
 
                 } else {
 
                     room = new DeluxeRoom(
                             number,
                             price,
-                            balcony
-                    );
+                            balcony);
                 }
 
                 room.setAvailable(!booked);
@@ -175,8 +166,7 @@ public class HotelService {
         } catch (SQLException e) {
 
             System.out.println(
-                    "Error fetching rooms: " + e.getMessage()
-            );
+                    "Error fetching rooms: " + e.getMessage());
         }
 
         return rooms;
@@ -196,27 +186,58 @@ public class HotelService {
 
             room.displayInfo();
 
-            if (!room.isAvailable()) {
-
-                System.out.println("Status: BOOKED");
-            } else {
-
-                System.out.println("Status: AVAILABLE");
-            }
-
             System.out.println();
         }
     }
 
-    public void showAvailableRooms() {
+    private Room createRoomFromResultSet(ResultSet rs) throws SQLException {
 
-        List<Room> rooms = getAllRooms();
+        int number = rs.getInt("number");
+        String type = rs.getString("type");
+        double price = rs.getDouble("price");
+        boolean balcony = rs.getBoolean("balcony");
+
+        if ("Standard".equals(type)) {
+
+            return new StandardRoom(
+                    number,
+                    price);
+
+        } else {
+
+            return new DeluxeRoom(
+                    number,
+                    price,
+                    balcony);
+        }
+    }
+
+    public void showAvailableRooms(
+            LocalDate checkIn,
+            LocalDate checkOut) {
+
+        String sql = "SELECT r.* " +
+                "FROM rooms r " +
+                "WHERE NOT EXISTS (" +
+                "SELECT 1 FROM bookings b " +
+                "WHERE b.room_number = r.number " +
+                "AND b.check_in < ? " +
+                "AND b.check_out > ?" +
+                ")";
 
         boolean found = false;
 
-        for (Room room : rooms) {
+        try (Connection conn = Database.connect();
+                PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-            if (room.isAvailable()) {
+            stmt.setString(1, checkOut.toString());
+            stmt.setString(2, checkIn.toString());
+
+            ResultSet rs = stmt.executeQuery();
+
+            while (rs.next()) {
+
+                Room room = createRoomFromResultSet(rs);
 
                 room.displayInfo();
 
@@ -225,27 +246,96 @@ public class HotelService {
 
                 found = true;
             }
-        }
 
-        if (!found) {
+            if (!found) {
+
+                System.out.println(
+                        "No available rooms for these dates.");
+            }
+
+        } catch (SQLException e) {
 
             System.out.println(
-                    "No available rooms at the moment."
-            );
+                    "Error checking available rooms: "
+                            + e.getMessage());
         }
     }
 
-    public void bookRoom(int roomNumber, User user) {
+    public void showAllBookings() {
 
-        String checkSql =
-                "SELECT booked FROM rooms WHERE number = ?";
+        String sql = "SELECT b.id, u.username, b.room_number, " +
+                "b.check_in, b.check_out, r.type, r.price " +
+                "FROM bookings b " +
+                "JOIN users u ON b.user_id = u.id " +
+                "JOIN rooms r ON b.room_number = r.number " +
+                "ORDER BY b.id";
 
-        String bookingSql =
-                "INSERT INTO bookings(user_id, room_number) " +
-                "VALUES(?, ?)";
+        try (Connection conn = Database.connect();
+                PreparedStatement stmt = conn.prepareStatement(sql);
+                ResultSet rs = stmt.executeQuery()) {
 
-        String updateRoomSql =
-                "UPDATE rooms SET booked = true WHERE number = ?";
+            System.out.println("\n=== ALL BOOKINGS ===");
+
+            boolean found = false;
+
+            while (rs.next()) {
+
+                found = true;
+
+                System.out.println(
+                        "Booking ID: " + rs.getInt("id"));
+
+                System.out.println(
+                        "Username: " + rs.getString("username"));
+
+                System.out.println(
+                        "Room: " + rs.getInt("room_number"));
+
+                System.out.println(
+                        "Check-in: " + rs.getString("check_in"));
+
+                System.out.println(
+                        "Check-out: " + rs.getString("check_out"));
+
+                System.out.println(
+                        "Type: " + rs.getString("type"));
+
+                System.out.println(
+                        "Price: $" + rs.getDouble("price") +
+                                " / night");
+
+                System.out.println("--------------------");
+            }
+
+            if (!found) {
+
+                System.out.println(
+                        "No bookings found.");
+            }
+
+        } catch (SQLException e) {
+
+            System.out.println(
+                    "Error fetching bookings: " +
+                            e.getMessage());
+        }
+    }
+
+    public void bookRoom(
+            int roomNumber,
+            User user,
+            LocalDate checkIn,
+            LocalDate checkOut) {
+
+        String checkSql = "SELECT number FROM rooms WHERE number = ?";
+
+        String overlapSql = "SELECT COUNT(*) FROM bookings " +
+                "WHERE room_number = ? " +
+                "AND check_in < ? " +
+                "AND check_out > ?";
+
+        String bookingSql = "INSERT INTO bookings(user_id, room_number, check_in, check_out) " +
+                "VALUES(?, ?, ?, ?)";
 
         try (Connection conn = Database.connect()) {
 
@@ -254,8 +344,7 @@ public class HotelService {
             try {
 
                 // Check whether the room exists and is available
-                try (PreparedStatement checkStmt =
-                             conn.prepareStatement(checkSql)) {
+                try (PreparedStatement checkStmt = conn.prepareStatement(checkSql)) {
 
                     checkStmt.setInt(1, roomNumber);
 
@@ -267,14 +356,21 @@ public class HotelService {
                         conn.rollback();
                         return;
                     }
+                }
 
-                    boolean booked = rs.getBoolean("booked");
+                // Check whether the dates overlap with an existing booking
+                try (PreparedStatement overlapStmt = conn.prepareStatement(overlapSql)) {
 
-                    if (booked) {
+                    overlapStmt.setInt(1, roomNumber);
+                    overlapStmt.setString(2, checkOut.toString());
+                    overlapStmt.setString(3, checkIn.toString());
+
+                    ResultSet overlapResult = overlapStmt.executeQuery();
+
+                    if (overlapResult.next() && overlapResult.getInt(1) > 0) {
 
                         System.out.println(
-                                "Room is already booked."
-                        );
+                                "Room is already booked for these dates.");
 
                         conn.rollback();
                         return;
@@ -282,35 +378,27 @@ public class HotelService {
                 }
 
                 // Create booking
-                try (PreparedStatement bookingStmt =
-                             conn.prepareStatement(bookingSql)) {
+                try (PreparedStatement bookingStmt = conn.prepareStatement(bookingSql)) {
 
                     bookingStmt.setInt(
                             1,
-                            getUserId(user, conn)
-                    );
+                            getUserId(user, conn));
 
                     bookingStmt.setInt(2, roomNumber);
 
+                    bookingStmt.setString(3, checkIn.toString());
+
+                    bookingStmt.setString(4, checkOut.toString());
+
                     bookingStmt.executeUpdate();
-                }
-
-                // Mark room as booked
-                try (PreparedStatement updateStmt =
-                             conn.prepareStatement(updateRoomSql)) {
-
-                    updateStmt.setInt(1, roomNumber);
-
-                    updateStmt.executeUpdate();
                 }
 
                 conn.commit();
 
                 System.out.println(
                         "Room " + roomNumber +
-                        " successfully booked by " +
-                        user.getUsername() + "!"
-                );
+                                " successfully booked by " +
+                                user.getUsername() + "!");
 
             } catch (SQLException e) {
 
@@ -318,88 +406,78 @@ public class HotelService {
 
                 System.out.println(
                         "Error booking room: " +
-                        e.getMessage()
-                );
+                                e.getMessage());
             }
 
         } catch (SQLException e) {
 
             System.out.println(
-                    "Database error: " + e.getMessage()
-            );
+                    "Database error: " + e.getMessage());
         }
     }
 
-    public void releaseRoom(int roomNumber, User user) {
+    public void cancelBooking(int bookingId, User user) {
 
-        String findBookingSql =
-                "SELECT b.user_id " +
+        String findBookingSql = "SELECT b.user_id, b.room_number " +
                 "FROM bookings b " +
-                "WHERE b.room_number = ?";
+                "WHERE b.id = ?";
 
         try (Connection conn = Database.connect();
-             PreparedStatement stmt =
-                     conn.prepareStatement(findBookingSql)) {
+                PreparedStatement stmt = conn.prepareStatement(findBookingSql)) {
 
-            stmt.setInt(1, roomNumber);
+            stmt.setInt(1, bookingId);
 
             ResultSet rs = stmt.executeQuery();
 
             if (!rs.next()) {
 
                 System.out.println(
-                        "This room is not booked."
-                );
+                        "Booking not found.");
 
                 return;
             }
 
             int bookingUserId = rs.getInt("user_id");
+            int roomNumber = rs.getInt("room_number");
 
             int currentUserId = getUserId(user, conn);
 
-            boolean isAdmin =
-                    user.getRole().name().equals("ADMIN");
+            boolean isAdmin = user.getRole().name().equals("ADMIN");
 
             if (!isAdmin && bookingUserId != currentUserId) {
 
                 System.out.println(
-                        "You cannot release this room."
-                );
+                        "You cannot cancel this booking.");
 
                 return;
             }
 
             deleteBookingAndFreeRoom(
                     roomNumber,
-                    conn
-            );
+                    conn);
 
             System.out.println(
-                    "Room " + roomNumber +
-                    " is now available again!"
-            );
+                    "Booking " + bookingId +
+                            " has been cancelled.");
 
         } catch (SQLException e) {
 
             System.out.println(
-                    "Error releasing room: " +
-                    e.getMessage()
-            );
+                    "Error cancelling booking: " +
+                            e.getMessage());
         }
     }
 
     public void showMyBookings(User user) {
 
-        String sql =
-                "SELECT r.number, r.type, r.price, r.balcony " +
+        String sql = "SELECT b.id, b.check_in, b.check_out, " +
+                "r.number, r.type, r.price, r.balcony " +
                 "FROM bookings b " +
                 "JOIN rooms r ON b.room_number = r.number " +
                 "WHERE b.user_id = ?";
 
         try (Connection conn = Database.connect();
-             PreparedStatement stmt =
-                     conn.prepareStatement(sql)) {
+                PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             int userId = getUserId(user, conn);
 
@@ -416,31 +494,38 @@ public class HotelService {
                 found = true;
 
                 System.out.println(
-                        "Room: " + rs.getInt("number")
-                );
+                        "Booking ID: " + rs.getInt("id"));
 
                 System.out.println(
-                        "Type: " + rs.getString("type")
-                );
+                        "Room: " + rs.getInt("number"));
+
+                System.out.println(
+                        "Check-in: " + rs.getString("check_in"));
+
+                System.out.println(
+                        "Check-out: " + rs.getString("check_out"));
+
+                System.out.println(
+                        "Room: " + rs.getInt("number"));
+
+                System.out.println(
+                        "Type: " + rs.getString("type"));
 
                 System.out.println(
                         "Price: $" + rs.getDouble("price") +
-                        " / night"
-                );
+                                " / night");
 
                 if ("Deluxe".equals(rs.getString("type"))) {
 
                     System.out.println(
                             "Balcony: " +
-                            (rs.getBoolean("balcony")
-                                    ? "Yes"
-                                    : "No")
-                    );
+                                    (rs.getBoolean("balcony")
+                                            ? "Yes"
+                                            : "No"));
                 }
 
                 System.out.println(
-                        "Status: BOOKED BY YOU"
-                );
+                        "Status: BOOKED BY YOU");
 
                 System.out.println();
             }
@@ -448,16 +533,14 @@ public class HotelService {
             if (!found) {
 
                 System.out.println(
-                        "You have no bookings."
-                );
+                        "You have no bookings.");
             }
 
         } catch (SQLException e) {
 
             System.out.println(
                     "Error fetching your bookings: " +
-                    e.getMessage()
-            );
+                            e.getMessage());
         }
     }
 
@@ -465,16 +548,13 @@ public class HotelService {
             User user,
             Connection conn) throws SQLException {
 
-        String sql =
-                "SELECT id FROM users WHERE username = ?";
+        String sql = "SELECT id FROM users WHERE username = ?";
 
-        try (PreparedStatement stmt =
-                     conn.prepareStatement(sql)) {
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setString(
                     1,
-                    user.getUsername()
-            );
+                    user.getUsername());
 
             ResultSet rs = stmt.executeQuery();
 
@@ -485,25 +565,20 @@ public class HotelService {
         }
 
         throw new SQLException(
-                "User not found in database."
-        );
+                "User not found in database.");
     }
 
     private void deleteBookingAndFreeRoom(
             int roomNumber,
             Connection conn) throws SQLException {
 
-        String deleteBookingSql =
-                "DELETE FROM bookings WHERE room_number = ?";
+        String deleteBookingSql = "DELETE FROM bookings WHERE room_number = ?";
 
-        String freeRoomSql =
-                "UPDATE rooms SET booked = false " +
+        String freeRoomSql = "UPDATE rooms SET booked = false " +
                 "WHERE number = ?";
 
-        try (PreparedStatement bookingStmt =
-                     conn.prepareStatement(deleteBookingSql);
-             PreparedStatement roomStmt =
-                     conn.prepareStatement(freeRoomSql)) {
+        try (PreparedStatement bookingStmt = conn.prepareStatement(deleteBookingSql);
+                PreparedStatement roomStmt = conn.prepareStatement(freeRoomSql)) {
 
             bookingStmt.setInt(1, roomNumber);
             bookingStmt.executeUpdate();
