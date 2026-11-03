@@ -2,17 +2,22 @@ package service;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.sql.PreparedStatement;
+
 import org.mindrot.jbcrypt.BCrypt;
 
 public class Database {
 
-        private static final String DB_URL = "jdbc:sqlite:hotel.db";
+        private static String dbUrl = "jdbc:sqlite:hotel.db";
+
+        public static void setUrl(String url) {
+                dbUrl = url;
+        }
 
         public static Connection connect() throws SQLException {
-                Connection conn = DriverManager.getConnection(DB_URL);
+                Connection conn = DriverManager.getConnection(dbUrl);
                 try (Statement st = conn.createStatement()) {
                         st.execute("PRAGMA foreign_keys = ON");
                 }
@@ -35,27 +40,28 @@ public class Database {
                                 "role TEXT NOT NULL" +
                                 ");";
 
+                String bookingsSql = "CREATE TABLE IF NOT EXISTS bookings (" +
+                                "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                                "user_id INTEGER NOT NULL," +
+                                "room_number INTEGER NOT NULL," +
+                                "check_in TEXT NOT NULL," +
+                                "check_out TEXT NOT NULL," +
+                                "FOREIGN KEY (user_id) REFERENCES users(id)," +
+                                "FOREIGN KEY (room_number) REFERENCES rooms(number)" +
+                                ");";
+
                 try (Connection conn = connect();
                                 Statement stmt = conn.createStatement()) {
 
                         stmt.execute(roomsSql);
                         stmt.execute(usersSql);
-
-                        String bookingsSql = "CREATE TABLE IF NOT EXISTS bookings (" +
-                                        "id INTEGER PRIMARY KEY AUTOINCREMENT," +
-                                        "user_id INTEGER NOT NULL," +
-                                        "room_number INTEGER NOT NULL," +
-                                        "check_in TEXT NOT NULL," +
-                                        "check_out TEXT NOT NULL," +
-                                        "FOREIGN KEY (user_id) REFERENCES users(id)," +
-                                        "FOREIGN KEY (room_number) REFERENCES rooms(number)" +
-                                        ");";
-
                         stmt.execute(bookingsSql);
 
-                        String adminPassword = System.getenv().getOrDefault("ADMIN_PASSWORD", "admin123");
+                        String adminPassword = System.getenv()
+                                        .getOrDefault("ADMIN_PASSWORD", "admin123");
 
-                        String adminSql = "INSERT OR IGNORE INTO users (username, password, role) " +
+                        String adminSql = "INSERT OR IGNORE INTO users " +
+                                        "(username, password, role) " +
                                         "VALUES ('admin', ?, 'ADMIN')";
 
                         try (PreparedStatement ps = conn.prepareStatement(adminSql)) {
