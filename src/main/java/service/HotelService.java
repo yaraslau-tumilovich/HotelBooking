@@ -23,8 +23,7 @@ public class HotelService {
 
         public void addRoom(Room room) {
 
-                String sql = "INSERT INTO rooms(number,type,price,booked,balcony) " +
-                                "VALUES(?,?,?,?,?)";
+                String sql = "INSERT INTO rooms(number,type,price,balcony) VALUES(?,?,?,?)";
 
                 try (Connection conn = Database.connect();
                                 PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -39,10 +38,8 @@ public class HotelService {
 
                         pstmt.setDouble(3, room.getPricePerNight());
 
-                        pstmt.setBoolean(4, false);
-
                         pstmt.setBoolean(
-                                        5,
+                                        4,
                                         room instanceof DeluxeRoom
                                                         && ((DeluxeRoom) room).hasBalcony());
 
@@ -140,7 +137,6 @@ public class HotelService {
                                 int number = rs.getInt("number");
                                 String type = rs.getString("type");
                                 double price = rs.getDouble("price");
-                                boolean booked = rs.getBoolean("booked");
                                 boolean balcony = rs.getBoolean("balcony");
 
                                 Room room;
@@ -158,8 +154,6 @@ public class HotelService {
                                                         price,
                                                         balcony);
                                 }
-
-                                room.setAvailable(!booked);
 
                                 rooms.add(room);
                         }

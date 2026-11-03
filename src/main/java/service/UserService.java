@@ -66,16 +66,6 @@ public class UserService {
                     userId = rs.getInt("id");
                 }
 
-                try (PreparedStatement stmt = conn.prepareStatement(
-                        "UPDATE rooms SET booked = false " +
-                                "WHERE number IN " +
-                                "(SELECT room_number FROM bookings " +
-                                "WHERE user_id = ?)")) {
-
-                    stmt.setInt(1, userId);
-                    stmt.executeUpdate();
-                }
-
                 try (PreparedStatement stmt = conn.prepareStatement(deleteBookingsSql)) {
 
                     stmt.setInt(1, userId);
@@ -233,11 +223,6 @@ public class UserService {
 
         String findUserSql = "SELECT id, role FROM users WHERE username = ?";
 
-        String freeRoomsSql = "UPDATE rooms SET booked = false " +
-                "WHERE number IN " +
-                "(SELECT room_number FROM bookings " +
-                "WHERE user_id = ?)";
-
         String deleteBookingsSql = "DELETE FROM bookings WHERE user_id = ?";
 
         String deleteUserSql = "DELETE FROM users WHERE id = ?";
@@ -279,13 +264,6 @@ public class UserService {
 
                     conn.rollback();
                     return false;
-                }
-
-                // Free user's rooms
-                try (PreparedStatement stmt = conn.prepareStatement(freeRoomsSql)) {
-
-                    stmt.setInt(1, userId);
-                    stmt.executeUpdate();
                 }
 
                 // Delete bookings

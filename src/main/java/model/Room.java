@@ -3,12 +3,10 @@ package model;
 public class Room {
     private int roomNumber;
     private double pricePerNight;
-    private boolean isAvailable;
 
     public Room(int roomNumber, double pricePerNight) {
         this.roomNumber = roomNumber;
         this.pricePerNight = pricePerNight;
-        this.isAvailable = true;
     }
 
     public int getRoomNumber() {
@@ -17,10 +15,6 @@ public class Room {
 
     public double getPricePerNight() {
         return pricePerNight;
-    }
-
-    public void setAvailable(boolean available) {
-        isAvailable = available;
     }
 
     public void displayInfo() {
