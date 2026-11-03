@@ -312,18 +312,21 @@ public class HotelService {
                 }
         }
 
-        public void bookRoom(
+        public boolean bookRoom(
                         int roomNumber,
                         User user,
                         LocalDate checkIn,
                         LocalDate checkOut) {
 
+                if (!checkOut.isAfter(checkIn)) {
+                        System.out.println("Check-out must be after check-in.");
+                        return false;
+                }
+
                 String checkSql = "SELECT number FROM rooms WHERE number = ?";
 
                 String overlapSql = "SELECT COUNT(*) FROM bookings " +
-                                "WHERE room_number = ? " +
-                                "AND check_in < ? " +
-                                "AND check_out > ?";
+                                "WHERE room_number = ? AND check_in < ? AND check_out > ?";
 
                 String bookingSql = "INSERT INTO bookings(user_id, room_number, check_in, check_out) " +
                                 "VALUES(?, ?, ?, ?)";
@@ -333,77 +336,49 @@ public class HotelService {
                         conn.setAutoCommit(false);
 
                         try {
-
-                                // Check whether the room exists and is available
-                                try (PreparedStatement checkStmt = conn.prepareStatement(checkSql)) {
-
-                                        checkStmt.setInt(1, roomNumber);
-
-                                        ResultSet rs = checkStmt.executeQuery();
-
-                                        if (!rs.next()) {
-
+                                try (PreparedStatement st = conn.prepareStatement(checkSql)) {
+                                        st.setInt(1, roomNumber);
+                                        if (!st.executeQuery().next()) {
                                                 System.out.println("Room not found.");
                                                 conn.rollback();
-                                                return;
+                                                return false;
                                         }
                                 }
 
-                                // Check whether the dates overlap with an existing booking
-                                try (PreparedStatement overlapStmt = conn.prepareStatement(overlapSql)) {
-
-                                        overlapStmt.setInt(1, roomNumber);
-                                        overlapStmt.setString(2, checkOut.toString());
-                                        overlapStmt.setString(3, checkIn.toString());
-
-                                        ResultSet overlapResult = overlapStmt.executeQuery();
-
-                                        if (overlapResult.next() && overlapResult.getInt(1) > 0) {
-
-                                                System.out.println(
-                                                                "Room is already booked for these dates.");
-
+                                try (PreparedStatement st = conn.prepareStatement(overlapSql)) {
+                                        st.setInt(1, roomNumber);
+                                        st.setString(2, checkOut.toString());
+                                        st.setString(3, checkIn.toString());
+                                        ResultSet rs = st.executeQuery();
+                                        if (rs.next() && rs.getInt(1) > 0) {
+                                                System.out.println("Room is already booked for these dates.");
                                                 conn.rollback();
-                                                return;
+                                                return false;
                                         }
                                 }
 
-                                // Create booking
-                                try (PreparedStatement bookingStmt = conn.prepareStatement(bookingSql)) {
-
-                                        bookingStmt.setInt(
-                                                        1,
-                                                        getUserId(user, conn));
-
-                                        bookingStmt.setInt(2, roomNumber);
-
-                                        bookingStmt.setString(3, checkIn.toString());
-
-                                        bookingStmt.setString(4, checkOut.toString());
-
-                                        bookingStmt.executeUpdate();
+                                try (PreparedStatement st = conn.prepareStatement(bookingSql)) {
+                                        st.setInt(1, getUserId(user, conn));
+                                        st.setInt(2, roomNumber);
+                                        st.setString(3, checkIn.toString());
+                                        st.setString(4, checkOut.toString());
+                                        st.executeUpdate();
                                 }
 
                                 conn.commit();
-
-                                System.out.println(
-                                                "Room " + roomNumber +
-                                                                " successfully booked by " +
-                                                                user.getUsername() + "!");
+                                System.out.println("Room " + roomNumber +
+                                                " successfully booked by " + user.getUsername() + "!");
+                                return true;
 
                         } catch (SQLException e) {
-
                                 conn.rollback();
-
-                                System.out.println(
-                                                "Error booking room: " +
-                                                                e.getMessage());
+                                System.out.println("Error booking room: " + e.getMessage());
+                                return false;
                         }
 
                 } catch (SQLException e) {
-
-                        System.out.println(
-                                        "Database error: " + e.getMessage());
+                        System.out.println("Database error: " + e.getMessage());
+                        return false;
                 }
         }
 
