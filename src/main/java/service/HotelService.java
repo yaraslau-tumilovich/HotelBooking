@@ -17,10 +17,6 @@ import model.User;
 
 public class HotelService {
 
-        public HotelService() {
-                Database.initialize();
-        }
-
         public void addRoom(Room room) {
 
                 String sql = "INSERT INTO rooms(number,type,price,balcony) VALUES(?,?,?,?)";
