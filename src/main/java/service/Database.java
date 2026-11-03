@@ -4,13 +4,19 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.PreparedStatement;
+import org.mindrot.jbcrypt.BCrypt;
 
 public class Database {
 
         private static final String DB_URL = "jdbc:sqlite:hotel.db";
 
         public static Connection connect() throws SQLException {
-                return DriverManager.getConnection(DB_URL);
+                Connection conn = DriverManager.getConnection(DB_URL);
+                try (Statement st = conn.createStatement()) {
+                        st.execute("PRAGMA foreign_keys = ON");
+                }
+                return conn;
         }
 
         public static void initialize() {
@@ -47,11 +53,15 @@ public class Database {
 
                         stmt.execute(bookingsSql);
 
-                        String adminSql = "INSERT OR IGNORE INTO users " +
-                                        "(username, password, role) " +
-                                        "VALUES ('admin', 'admin123', 'ADMIN')";
+                        String adminPassword = System.getenv().getOrDefault("ADMIN_PASSWORD", "admin123");
 
-                        stmt.execute(adminSql);
+                        String adminSql = "INSERT OR IGNORE INTO users (username, password, role) " +
+                                        "VALUES ('admin', ?, 'ADMIN')";
+
+                        try (PreparedStatement ps = conn.prepareStatement(adminSql)) {
+                                ps.setString(1, BCrypt.hashpw(adminPassword, BCrypt.gensalt()));
+                                ps.executeUpdate();
+                        }
 
                         System.out.println("Database initialized successfully!");
 

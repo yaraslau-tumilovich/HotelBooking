@@ -7,6 +7,7 @@ import java.sql.SQLException;
 
 import model.Role;
 import model.User;
+import org.mindrot.jbcrypt.BCrypt;
 
 public class UserService {
 
@@ -19,7 +20,7 @@ public class UserService {
                 PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setString(1, username);
-            stmt.setString(2, password);
+            stmt.setString(2, BCrypt.hashpw(password, BCrypt.gensalt()));
             stmt.setString(3, "CLIENT");
 
             stmt.executeUpdate();
@@ -311,33 +312,24 @@ public class UserService {
 
     public User login(String username, String password) {
 
-        String sql = "SELECT * FROM users " +
-                "WHERE username = ? AND password = ?";
+        String sql = "SELECT username, password, role FROM users WHERE username = ?";
 
         try (Connection conn = Database.connect();
                 PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setString(1, username);
-            stmt.setString(2, password);
 
-            ResultSet result = stmt.executeQuery();
-
-            if (result.next()) {
-
-                String roleString = result.getString("role");
-
-                Role role = Role.valueOf(roleString);
-
-                return new User(
-                        result.getString("username"),
-                        result.getString("password"),
-                        role);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next() && BCrypt.checkpw(password, rs.getString("password"))) {
+                    return new User(
+                            rs.getString("username"),
+                            rs.getString("password"),
+                            Role.valueOf(rs.getString("role")));
+                }
             }
 
         } catch (SQLException e) {
-
-            System.out.println(
-                    "Login error: " + e.getMessage());
+            System.out.println("Login error: " + e.getMessage());
         }
 
         return null;
