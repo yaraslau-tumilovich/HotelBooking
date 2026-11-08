@@ -6,6 +6,7 @@ target/
 *.class
 *.db
 .idea/
+data/
 
 HELP.md
 target/
