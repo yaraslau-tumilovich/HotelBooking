@@ -1,0 +1,103 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+  <head th:replace="~{fragments/layout :: head('Rooms')}"></head>
+  <body>
+    <nav th:replace="~{fragments/layout :: navbar}"></nav>
+
+    <main class="container">
+      <div th:replace="~{fragments/layout :: messages}"></div>
+
+      <h1 class="h3 mb-3">Rooms</h1>
+
+      <form th:action="@{/rooms}" method="get" class="row g-2 mb-4">
+        <div class="col-sm-4">
+          <label class="form-label">Check-in</label>
+          <input
+            type="date"
+            name="checkIn"
+            class="form-control"
+            th:value="${checkIn}"
+            th:min="${today}"
+            required
+          />
+        </div>
+        <div class="col-sm-4">
+          <label class="form-label">Check-out</label>
+          <input
+            type="date"
+            name="checkOut"
+            class="form-control"
+            th:value="${checkOut}"
+            th:min="${today}"
+            required
+          />
+        </div>
+        <div class="col-sm-4 d-flex align-items-end">
+          <button type="submit" class="btn btn-primary w-100">
+            Search available rooms
+          </button>
+        </div>
+      </form>
+
+      <p class="text-muted" th:if="${searched and rooms.isEmpty()}">
+        No rooms are available for these dates.
+      </p>
+
+      <div class="row g-3">
+        <div class="col-md-6 col-lg-4" th:each="room : ${rooms}">
+          <div class="card h-100 shadow-sm">
+            <div class="card-body">
+              <h5 class="card-title">
+                Room <span th:text="${room.roomNumber}"></span>
+              </h5>
+              <span
+                class="badge text-bg-secondary"
+                th:text="${room.type}"
+              ></span>
+              <span class="badge text-bg-info" th:if="${room.hasBalcony()}"
+                >Balcony</span
+              >
+              <p class="mt-3 mb-1">
+                <strong
+                  th:text="${#numbers.formatDecimal(room.pricePerNight, 1, 2)}"
+                ></strong>
+                per night
+              </p>
+              <p class="text-muted small mb-0" th:if="${searched}">
+                <span th:text="${nights}"></span> night(s) total:
+                <strong
+                  th:text="${#numbers.formatDecimal(room.pricePerNight.multiply(nights), 1, 2)}"
+                ></strong>
+              </p>
+            </div>
+            <div class="card-footer bg-transparent" th:if="${searched}">
+              <form
+                th:if="${currentUser != null}"
+                th:action="@{/bookings}"
+                method="post"
+              >
+                <input
+                  type="hidden"
+                  name="roomNumber"
+                  th:value="${room.roomNumber}"
+                />
+                <input type="hidden" name="checkIn" th:value="${checkIn}" />
+                <input type="hidden" name="checkOut" th:value="${checkOut}" />
+                <button type="submit" class="btn btn-success w-100">
+                  Book
+                </button>
+              </form>
+              <a
+                th:if="${currentUser == null}"
+                th:href="@{/login}"
+                class="btn btn-outline-secondary w-100"
+              >
+                Log in to book
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </body>
+</html>

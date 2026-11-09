@@ -1,22 +1,42 @@
 <!doctype html>
 <html xmlns:th="http://www.thymeleaf.org">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Hotel Booking</title>
-  </head>
+  <head th:replace="~{fragments/layout :: head('Home')}"></head>
   <body>
-    <h1>Hotel Booking</h1>
+    <nav th:replace="~{fragments/layout :: navbar}"></nav>
 
-    <div th:if="${username == null}">
-      <a th:href="@{/login}">Log in</a> |
-      <a th:href="@{/register}">Register</a>
-    </div>
+    <main class="container">
+      <div class="p-5 mb-4 bg-white border rounded-3 shadow-sm">
+        <h1 class="display-6">Find your room</h1>
+        <p class="text-muted">Pick your dates and see which rooms are free.</p>
 
-    <div th:if="${username != null}">
-      <p>Hello, <span th:text="${username}"></span>!</p>
-      <form th:action="@{/logout}" method="post">
-        <button type="submit">Log out</button>
-      </form>
-    </div>
+        <form th:action="@{/rooms}" method="get" class="row g-2">
+          <div class="col-sm-4">
+            <label class="form-label">Check-in</label>
+            <input
+              type="date"
+              name="checkIn"
+              class="form-control"
+              th:min="${today}"
+              required
+            />
+          </div>
+          <div class="col-sm-4">
+            <label class="form-label">Check-out</label>
+            <input
+              type="date"
+              name="checkOut"
+              class="form-control"
+              th:min="${today}"
+              required
+            />
+          </div>
+          <div class="col-sm-4 d-flex align-items-end">
+            <button type="submit" class="btn btn-primary w-100">
+              Search available rooms
+            </button>
+          </div>
+        </form>
+      </div>
+    </main>
   </body>
 </html>
