@@ -12,5 +12,5 @@ public record CreateRoomRequest(
         @NotNull @Positive Integer roomNumber,
         @NotNull RoomType type,
         @NotNull @Positive @Digits(integer = 8, fraction = 2) BigDecimal pricePerNight,
-        boolean balcony) {
+        Boolean balcony) {
 }

@@ -49,7 +49,7 @@ public class RoomApiController {
     @ResponseStatus(HttpStatus.CREATED)
     public RoomResponse create(@Valid @RequestBody CreateRoomRequest request) {
         return RoomResponse.from(roomService.addRoom(
-                request.roomNumber(), request.type(), request.pricePerNight(), request.balcony()));
+                request.roomNumber(), request.type(), request.pricePerNight(), Boolean.TRUE.equals(request.balcony())));
     }
 
     @PutMapping("/{number}/price")
