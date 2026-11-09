@@ -4,6 +4,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.hotelbooking.hotel_booking.exception.ConflictException;
+import com.hotelbooking.hotel_booking.exception.NotFoundException;
 import com.hotelbooking.hotel_booking.exception.ServiceException;
 import com.hotelbooking.hotel_booking.model.Role;
 import com.hotelbooking.hotel_booking.model.User;
@@ -31,7 +33,7 @@ public class UserService {
             throw new ServiceException("Password must be at least 6 characters long.");
         }
         if (users.existsByUsername(name)) {
-            throw new ServiceException("Username is already taken.");
+            throw new ConflictException("Username is already taken.");
         }
 
         return users.save(new User(name, encoder.encode(rawPassword), Role.USER));
@@ -40,6 +42,6 @@ public class UserService {
     @Transactional(readOnly = true)
     public User getByUsername(String username) {
         return users.findByUsername(username)
-                .orElseThrow(() -> new ServiceException("User not found."));
+                .orElseThrow(() -> new NotFoundException("User not found."));
     }
 }

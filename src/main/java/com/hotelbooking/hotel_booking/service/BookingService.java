@@ -6,6 +6,9 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.hotelbooking.hotel_booking.exception.ConflictException;
+import com.hotelbooking.hotel_booking.exception.ForbiddenException;
+import com.hotelbooking.hotel_booking.exception.NotFoundException;
 import com.hotelbooking.hotel_booking.exception.ServiceException;
 import com.hotelbooking.hotel_booking.model.Booking;
 import com.hotelbooking.hotel_booking.model.Role;
@@ -38,12 +41,12 @@ public class BookingService {
         }
 
         User user = users.findByUsername(username)
-                .orElseThrow(() -> new ServiceException("User not found."));
+                .orElseThrow(() -> new NotFoundException("User not found."));
         Room room = rooms.findByRoomNumber(roomNumber)
-                .orElseThrow(() -> new ServiceException("Room " + roomNumber + " not found."));
+                .orElseThrow(() -> new NotFoundException("Room " + roomNumber + " not found."));
 
         if (bookings.countOverlapping(room, checkIn, checkOut) > 0) {
-            throw new ServiceException("Room is already booked for these dates.");
+            throw new ConflictException("Room is already booked for these dates.");
         }
 
         return bookings.save(new Booking(user, room, checkIn, checkOut));
@@ -52,15 +55,15 @@ public class BookingService {
     @Transactional
     public void cancel(Long bookingId, String username) {
         Booking booking = bookings.findById(bookingId)
-                .orElseThrow(() -> new ServiceException("Booking not found."));
+                .orElseThrow(() -> new NotFoundException("Booking not found."));
         User user = users.findByUsername(username)
-                .orElseThrow(() -> new ServiceException("User not found."));
+                .orElseThrow(() -> new NotFoundException("User not found."));
 
         boolean isAdmin = user.getRole() == Role.ADMIN;
         boolean isOwner = booking.getUser().getId().equals(user.getId());
 
         if (!isAdmin && !isOwner) {
-            throw new ServiceException("You cannot cancel this booking.");
+            throw new ForbiddenException("You cannot cancel this booking.");
         }
 
         bookings.delete(booking);
@@ -69,7 +72,7 @@ public class BookingService {
     @Transactional(readOnly = true)
     public List<Booking> findForUser(String username) {
         User user = users.findByUsername(username)
-                .orElseThrow(() -> new ServiceException("User not found."));
+                .orElseThrow(() -> new NotFoundException("User not found."));
         return bookings.findByUserOrderByCheckInDesc(user);
     }
 

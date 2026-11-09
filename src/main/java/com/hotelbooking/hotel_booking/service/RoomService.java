@@ -7,6 +7,8 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.hotelbooking.hotel_booking.exception.ConflictException;
+import com.hotelbooking.hotel_booking.exception.NotFoundException;
 import com.hotelbooking.hotel_booking.exception.ServiceException;
 import com.hotelbooking.hotel_booking.model.Room;
 import com.hotelbooking.hotel_booking.model.RoomType;
@@ -46,31 +48,32 @@ public class RoomService {
             throw new ServiceException("Price must be greater than zero.");
         }
         if (rooms.existsByRoomNumber(number)) {
-            throw new ServiceException("Room " + number + " already exists.");
+            throw new ConflictException("Room " + number + " already exists.");
         }
         return rooms.save(new Room(number, type, price, balcony));
     }
 
     @Transactional
-    public void changePrice(int number, BigDecimal price) {
+    public Room changePrice(int number, BigDecimal price) {
         if (price == null || price.signum() <= 0) {
             throw new ServiceException("Price must be greater than zero.");
         }
         Room room = getByNumber(number);
         room.setPricePerNight(price);
+        return room;
     }
 
     @Transactional
     public void removeRoom(int number) {
         Room room = getByNumber(number);
         if (bookings.existsByRoom(room)) {
-            throw new ServiceException("Room " + number + " has bookings and cannot be removed.");
+            throw new ConflictException("Room " + number + " has bookings and cannot be removed.");
         }
         rooms.delete(room);
     }
 
     private Room getByNumber(int number) {
         return rooms.findByRoomNumber(number)
-                .orElseThrow(() -> new ServiceException("Room " + number + " not found."));
+                .orElseThrow(() -> new NotFoundException("Room " + number + " not found."));
     }
 }
