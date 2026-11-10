@@ -42,7 +42,7 @@ public class BookingService {
 
         User user = users.findByUsername(username)
                 .orElseThrow(() -> new NotFoundException("User not found."));
-        Room room = rooms.findByRoomNumber(roomNumber)
+        Room room = rooms.findByRoomNumberForUpdate(roomNumber)
                 .orElseThrow(() -> new NotFoundException("Room " + roomNumber + " not found."));
 
         if (bookings.countOverlapping(room, checkIn, checkOut) > 0) {
