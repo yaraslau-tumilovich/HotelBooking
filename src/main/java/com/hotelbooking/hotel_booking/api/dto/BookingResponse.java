@@ -12,6 +12,7 @@ public record BookingResponse(
         LocalDate checkIn,
         LocalDate checkOut,
         long nights,
+        BigDecimal pricePerNight,
         BigDecimal totalPrice) {
 
     public static BookingResponse from(Booking booking) {
@@ -22,6 +23,7 @@ public record BookingResponse(
                 booking.getCheckIn(),
                 booking.getCheckOut(),
                 booking.getNights(),
+                booking.getPricePerNight(),
                 booking.getTotalPrice());
     }
 }

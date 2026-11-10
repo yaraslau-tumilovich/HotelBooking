@@ -154,4 +154,14 @@ class BookingServiceTest {
         assertThrows(ServiceException.class,
                 () -> bookingService.cancel(9999L, "alice"));
     }
+
+    @Test
+    void priceChangeDoesNotAffectExistingBooking() {
+        bookingService.book("alice", 101, d(0), d(2));
+
+        roomService.changePrice(101, new BigDecimal("80.00"));
+
+        Booking saved = bookings.findAll().get(0);
+        assertEquals(0, new BigDecimal("100.00").compareTo(saved.getTotalPrice()));
+    }
 }

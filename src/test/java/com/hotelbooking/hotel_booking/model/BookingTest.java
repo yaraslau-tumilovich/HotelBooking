@@ -26,4 +26,15 @@ class BookingTest {
         assertThrows(IllegalArgumentException.class, () -> new Booking(user, room,
                 LocalDate.of(2026, 12, 10), LocalDate.of(2026, 12, 10)));
     }
+
+    @Test
+    void totalPriceStaysTheSameWhenRoomPriceChanges() {
+        Booking booking = new Booking(user, room,
+                LocalDate.of(2026, 12, 10), LocalDate.of(2026, 12, 13));
+
+        room.setPricePerNight(new BigDecimal("500.00"));
+
+        assertEquals(0, new BigDecimal("50.00").compareTo(booking.getPricePerNight()));
+        assertEquals(0, new BigDecimal("150.00").compareTo(booking.getTotalPrice()));
+    }
 }

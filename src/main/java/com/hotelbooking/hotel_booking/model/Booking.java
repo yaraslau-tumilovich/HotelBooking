@@ -4,14 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 
 @Entity
 @Table(name = "bookings")
@@ -35,6 +28,9 @@ public class Booking {
     @Column(name = "check_out", nullable = false)
     private LocalDate checkOut;
 
+    @Column(name = "price_per_night", nullable = false, precision = 10, scale = 2)
+    private BigDecimal pricePerNight;
+
     protected Booking() {
     }
 
@@ -46,6 +42,7 @@ public class Booking {
         this.room = room;
         this.checkIn = checkIn;
         this.checkOut = checkOut;
+        this.pricePerNight = room.getPricePerNight();
     }
 
     public Long getId() {
@@ -68,11 +65,15 @@ public class Booking {
         return checkOut;
     }
 
+    public BigDecimal getPricePerNight() {
+        return pricePerNight;
+    }
+
     public long getNights() {
         return ChronoUnit.DAYS.between(checkIn, checkOut);
     }
 
     public BigDecimal getTotalPrice() {
-        return room.getPricePerNight().multiply(BigDecimal.valueOf(getNights()));
+        return pricePerNight.multiply(BigDecimal.valueOf(getNights()));
     }
 }
